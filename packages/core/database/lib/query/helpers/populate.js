@@ -18,6 +18,14 @@ const getRootLevelPopulate = meta => {
   return populate;
 };
 
+const normalizeOrder = (key, joins, order) => {
+  const upperReference = joins.find(j => j.referencedTable === key);
+  const upperOrders =  order.filter(uob => uob.column.indexOf(upperReference.alias) === 0);
+  return upperOrders.map(uob => ({
+    [uob.column.replace(upperReference.alias.concat('.'), '')]: uob.order
+  }));
+}
+
 /**
  * Converts and prepares the query for populate
  *
@@ -401,6 +409,7 @@ const applyPopulate = async (results, populate, ctx) => {
         })
         .addSelect(joinColAlias)
         .where({ [joinColAlias]: referencedValues })
+        .orderBy(normalizeOrder(key, ctx.qb.state.joins, ctx.qb.state.orderBy))
         .execute({ mapResults: false });
 
       const map = _.groupBy(joinColumnName, rows);

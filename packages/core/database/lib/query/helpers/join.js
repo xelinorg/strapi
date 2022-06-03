@@ -1,5 +1,19 @@
 'use strict';
 
+const existing = (nextJoin, stateJoins) => {
+  const foundPivot = stateJoins.find(j => j.referencedTable === nextJoin.name
+    && j.referencedColumn === nextJoin.joinColumn.name
+    && j.rootColumn === nextJoin.inverseJoinColumn.referencedColumn
+  )
+  if (foundPivot && foundPivot.alias ) {
+    const usable = stateJoins.find(j => j.rootTable === foundPivot.alias
+      && j.rootColumn === nextJoin.inverseJoinColumn.name
+      && j.referencedColumn === nextJoin.inverseJoinColumn.referencedColumn
+    )
+    return usable && usable.alias ? usable.alias: null;
+  }
+};
+
 const createPivotJoin = (qb, joinTable, alias, tragetMeta) => {
   const joinAlias = qb.getAlias();
   qb.join({
@@ -48,7 +62,7 @@ const createJoin = (ctx, { alias, attributeName, attribute }) => {
 
   const joinTable = attribute.joinTable;
   if (joinTable) {
-    return createPivotJoin(qb, joinTable, alias, tragetMeta);
+    return existing(joinTable, qb.state.joins) || createPivotJoin(qb, joinTable, alias, tragetMeta);
   }
 
   return alias;

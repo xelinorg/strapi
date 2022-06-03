@@ -25,9 +25,10 @@ const createQueryBuilder = (uid, db) => {
 
   let counter = 0;
   const getAlias = () => `t${counter++}`;
+  const globalRootAlias = getAlias();
 
   return {
-    alias: getAlias(),
+    alias: globalRootAlias,
     getAlias,
     state,
 
@@ -275,6 +276,9 @@ const createQueryBuilder = (uid, db) => {
           qb.select(state.select.map(column => this.aliasColumn(column)));
 
           if (this.shouldUseDistinct()) {
+            if (state.joins.length > 1) {
+              qb.groupBy(globalRootAlias.concat('.id'));
+            }
             qb.distinct();
           }
 
